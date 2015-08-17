@@ -1,0 +1,71 @@
+# Maintainer: Sergey Marochkin <me@ziggi.org>
+
+pkgname=oscada
+pkgver=0.8.0.10
+pkgrel=1
+pkgdesc="OpenSCADA is a open supervisory control and data acquisition system"
+arch=('i686' 'x86_64')
+url="http://oscada.org/"
+license=('GPL')
+groups=('devel')
+depends=('gettext' 'zlib' 'pcre' 'gd' 'libmysqlclient' 'sqlite' 'postgresql-libs' 'libfbclient' 'openssl' 'bison' 'net-snmp' 'lm_sensors' 'glibc' 'portaudio' 'qt4' 'fftw' 'phonon')
+conflicts=('openscada' 'openscada-svn')
+source=("ftp://ftp.oscada.org/OpenSCADA/0.8.0/openscada-$pkgver-1.src.rpm")
+md5sums=('d09937af6cf7713307a2b4dda8e497f3')
+
+build() {
+  msg "Preparing sources"
+  bsdtar -xf openscada-$pkgver.tar.lzma
+  bsdtar -xf openscada-res-$pkgver.tar.lzma
+  
+  msg "Starting build"
+  cd openscada-$pkgver
+  LDFLAGS="${LDFLAGS} -Wl,--no-as-needed"
+  ./configure --enable-AllModuls
+  make DESTDIR="$pkgdir"
+}
+
+package() {
+  cd $srcdir/openscada-$pkgver
+  
+  # dir
+  install -d $pkgdir/usr/bin
+  install -d $pkgdir/usr/share/{applications,pixmaps,doc/openscada}
+  install -d $pkgdir/etc
+  install -dm644 $pkgdir/var/spool/openscada/{icons,AGLKS,Boiler,LibsDB,DATA,ARCHIVES/{MESS,VAL}}
+  
+  # bin
+  install -Dm755 ../data/openscada_start $pkgdir/usr/bin/
+  install -Dm644 ../data/ModelsDB/AGLKS/openscada_demo $pkgdir/usr/bin/
+  install -Dm644 ../data/ModelsDB/AGLKS/openscada_demo_local $pkgdir/usr/bin/
+  install -Dm644 ../data/ModelsDB/AGLKS/openscada_AGLKS $pkgdir/usr/bin/
+  install -Dm644 ../data/ModelsDB/Boiler/openscada_Boiler $pkgdir/usr/bin/
+  
+  # xml
+  install -Dm644 ../data/{oscada.xml,oscada_start.xml} $pkgdir/etc/
+  install -Dm644 ../data/ModelsDB/AGLKS/oscada_AGLKS.xml $pkgdir/etc/
+  install -Dm644 ../data/ModelsDB/AGLKS/oscada_demo_local.xml $pkgdir/etc/
+  install -Dm644 ../data/ModelsDB/Boiler/oscada_Boiler.xml $pkgdir/etc/
+  
+  # icon
+  install -Dm644 ../data/openscada.png $pkgdir/usr/share/pixmaps/
+  install -Dm644 ../data/ModelsDB/AGLKS/openscada_AGLKS.png $pkgdir/usr/share/pixmaps/
+  install -Dm644 ../data/ModelsDB/Boiler/openscada_Boiler.png $pkgdir/usr/share/pixmaps/
+  install -Dm644 ../data/icons/* $pkgdir/var/spool/openscada/icons/
+  
+  # desktop
+  install -Dm644 ../data/openscada.desktop $pkgdir/usr/share/applications
+  install -Dm644 ../data/ModelsDB/AGLKS/openscada_AGLKS.desktop $pkgdir/usr/share/applications/
+  install -Dm644 ../data/ModelsDB/Boiler/openscada_Boiler.desktop $pkgdir/usr/share/applications/
+  
+  # doc
+  install -Dm644 {ChangeLog,COPYING,INSTALL,README*,TODO*} $pkgdir/usr/share/doc/openscada/
+  cp -r ../doc/* $pkgdir/usr/share/doc/openscada/
+  
+  # db
+  install -Dm644 ../data/ModelsDB/AGLKS/*.db $pkgdir/var/spool/openscada/AGLKS/
+  install -Dm644 ../data/ModelsDB/Boiler/*.db $pkgdir/var/spool/openscada/Boiler/
+  install -Dm644 ../data/LibsDB/*.db $pkgdir/var/spool/openscada/LibsDB/
+  
+  make DESTDIR="$pkgdir" install
+}
